@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Manage Users</title>
+    <!-- Подключаем DataTables и jQuery -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+</head>
+
+<body>
+<h1>Admin - Manage Users</h1>
+
+<!-- Таблица для отображения данных пользователей -->
+<table id="usersTable" class="display">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Password Updated At</th>
+        <th>Created At</th>
+        <th>Last Login</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+
+    <tbody></tbody>
+</table>
+
+<script>
+    $(document).ready(function () {
+        // Инициализируем DataTable с поддержкой AJAX-запросов
+        const table = $('#usersTable').DataTable({
+            dom: 'lrftip', // Убирает поле поиска ('f') и другие элементы
+            pageLength: 50, // Количество записей на странице по умолчанию
+            lengthMenu: [5, 10, 25, 50], // Варианты количества записей
+            serverSide: true, // Включает серверную обработку данных
+            // processing: true, // Показывает индикатор загрузки
+            ajax: {
+                url: '/api/auth/admin/users', // Маршрут на сервер
+                type: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                },
+                dataSrc: 'data'
+            },
+            // scrollY: '50vh', // Высота области прокрутки
+            // scrollCollapse: true, // Уменьшает область прокрутки, если строк меньше
+            // scroller: true, // Включает ленивую загрузку данных при прокрутке
+            // deferRender: true, // Улучшает производительность при отображении большого числа строк
+            columns: [
+                {data: 'id'},
+                {data: 'username'},
+                {data: 'email'},
+                {data: 'phone'},
+                {data: 'role'},
+                {data: 'status'},
+                {data: 'password_updated_at'},
+                {data: 'created_at'},
+                {data: 'last_login'},
+
+                {
+                    data: null,
+                    render: function (data) {
+                        return `
+                            <button onclick="editUser('${data.id}')">Edit</button>
+                            <button onclick="deleteUser('${data.id}')">Delete</button>
+                        `;
+                    }
+                }
+            ]
+        });
+
+        // Функция редактирования данных пользователя
+        window.editUser = function (id) {
+            const username = prompt("Enter new username:");
+            const role = prompt("Enter new role (admin/user):");
+            if (!username || !role) {
+                alert("Username and role are required.");
+                return;
+            }
+
+            fetch(`/api/auth/admin/users/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                },
+                body: JSON.stringify({ username, role })
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error updating user');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    alert(data.message);
+                    table.ajax.reload(); // Перезагружаем таблицу
+                })
+                .catch(error => {
+                    alert("Error: " + error.message);
+                });
+        };
+
+        // Функция удаления данных пользователя
+        window.deleteUser = function (id) {
+            if (confirm("Are you sure you want to delete this user?")) {
+                fetch(`/api/auth/admin/users/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Error deleting user');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        alert(data.message);
+                        table.ajax.reload(); // Перезагружаем таблицу
+                    })
+                    .catch(error => {
+                        alert("Error: " + error.message);
+                    });
+            }
+        };
+    });
+</script>
+</body>
+
+</html>

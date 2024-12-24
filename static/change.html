@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Change Role</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<form id="changeRoleForm">
+    <h2>Change User Role</h2>
+    <input type="text" id="username" placeholder="Username" required>
+    <select id="role">
+        <option value="user">User</option>
+        <option value="editor">Editor</option>
+        <option value="moderator">Moderator</option>
+        <option value="admin">Admin</option>
+    </select>
+    <button type="submit">Change Role</button>
+</form>
+<div id="roleMessage" class="message"></div>
+
+<script src="script.js" defer></script>
+<script>
+    document.getElementById('changeRoleForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!(await fetchWithAuth())) return;
+
+        const username = document.getElementById('username').value;
+        const role = document.getElementById('role').value;
+
+        try {
+            const response = await fetch('/api/auth/assign-role', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+                },
+                body: JSON.stringify({ username, role }),
+            });
+
+            const messageDiv = document.getElementById('roleMessage');
+            if (response.ok) {
+                messageDiv.className = 'message success';
+                messageDiv.textContent = 'Role updated successfully!';
+            } else {
+                const data = await response.json();
+                messageDiv.className = 'message error';
+                messageDiv.textContent = data.error || 'Role update failed!';
+            }
+        } catch (err) {
+            console.error('Error updating role:', err);
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!-- /home/vtoroy/GolandProjects/apiP/v3/client/static/register.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+</head>
+<body>
+<h1>Registration</h1>
+<form id="registerForm">
+    <label for="username">Username:</label><br>
+    <input type="text" id="username" name="username" required><br><br>
+
+    <label for="password">Password:</label><br>
+    <input type="password" id="password" name="password" required><br><br>
+
+    <button type="submit">Register</button>
+</form>
+
+<div id="errorMessage" style="color: red; display: none;"></div>
+<div id="successMessage" style="color: green; display: none;"></div>
+
+
+<script>
+    document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, password }),
+            });
+
+            const data = await response.json();
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+
+            if (response.ok) {
+                const authToken = response.headers.get('Authorization')?.replace('Bearer ', '');
+                const refreshToken = response.headers.get('RefreshToken');
+
+                if (authToken) {
+                    localStorage.setItem('authToken', authToken);
+                }
+                if (refreshToken) {
+                    document.cookie = `refreshToken=${refreshToken}; HttpOnly; Secure; SameSite=Strict`;
+                }
+
+                errorMessage.style.display = 'none';
+                successMessage.style.display = 'block';
+                successMessage.textContent = 'Registration successful!';
+            } else {
+                successMessage.style.display = 'none';
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = data.error || 'Registration failed!';
+                // console.error('Registration failed:', await response.json());
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('errorMessage').textContent = 'An error occurred during registration.';
+            document.getElementById('errorMessage').style.display = 'block';
+        }
+    });
+</script>
+
+
+</body>
+</html>

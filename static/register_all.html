@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Registration Form</title>
+    <style>
+        form {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 1em;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        label, input {
+            display: block;
+            width: 100%;
+            margin-bottom: 1em;
+        }
+
+        input {
+            padding: 0.5em;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        button {
+            padding: 0.7em;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<h1>Registration</h1>
+
+<form id="registrationForm">
+    <!-- Поля формы будут добавлены динамически -->
+    <button type="submit">Register</button>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            // Запрос к серверу для получения списка обязательных полей
+            const response = await fetch('/api/auth/required-fields');
+            if (response.ok) {
+                const data = await response.json();
+                const fields = data.required_fields; // Список обязательных полей
+
+                const form = document.getElementById('registrationForm');
+
+                // Динамически создаем поля формы
+                fields.forEach(field => {
+                    const label = document.createElement('label');
+                    label.textContent = field.charAt(0).toUpperCase() + field.slice(1);
+
+                    const input = document.createElement('input');
+                    input.type = field === 'password' ? 'password' : 'text';
+                    input.name = field;
+                    input.required = true;
+
+                    form.insertBefore(label, form.querySelector('button'));
+                    form.insertBefore(input, form.querySelector('button'));
+                });
+
+                // Обработчик отправки формы
+                form.addEventListener('submit', async (event) => {
+                    event.preventDefault();
+
+                    const formData = new FormData(form);
+                    const requestBody = {};
+
+                    formData.forEach((value, key) => {
+                        requestBody[key] = value;
+                    });
+
+                    try {
+                        const registerResponse = await fetch('/api/auth/register', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(requestBody),
+                        });
+
+                        if (registerResponse.ok) {
+                            alert('Registration successful!');
+                        } else {
+                            const errorData = await registerResponse.json();
+                            alert('Error: ' + errorData.error);
+                        }
+                    } catch (error) {
+                        alert('Error submitting the form: ' + error.message);
+                    }
+                });
+            } else {
+                console.error('Failed to fetch required fields:', response.statusText);
+            }
+        } catch (error) {
+            console.error('Error fetching required fields:', error);
+        }
+    });
+</script>
+</body>
+</html>
