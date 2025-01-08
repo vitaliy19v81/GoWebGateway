@@ -30,85 +30,41 @@
         <th>Actions</th>
     </tr>
     </thead>
-
     <tbody></tbody>
 </table>
 
 <script>
     $(document).ready(function () {
-        // Инициализируем DataTable с поддержкой AJAX-запросов
+        // Инициализация DataTable
         const table = $('#usersTable').DataTable({
-            dom: 'lrftip', // Убирает поле поиска ('f') и другие элементы
-            pageLength: 50, // Количество записей на странице по умолчанию
-            lengthMenu: [5, 10, 25, 50], // Варианты количества записей
-            serverSide: true, // Включает серверную обработку данных
-            // processing: true, // Показывает индикатор загрузки
             ajax: {
-                url: '/api/auth/admin/users', // Маршрут на сервер
+                url: '/api/auth/admin/users',
                 type: 'GET',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
                 },
                 dataSrc: 'data'
             },
-            // scrollY: '50vh', // Высота области прокрутки
-            // scrollCollapse: true, // Уменьшает область прокрутки, если строк меньше
-            // scroller: true, // Включает ленивую загрузку данных при прокрутке
-            // deferRender: true, // Улучшает производительность при отображении большого числа строк
             columns: [
-                {data: 'id'},
-                {data: 'username'},
-                {data: 'email'},
-                {data: 'phone'},
-                {data: 'role'},
-                {data: 'status'},
-                {data: 'password_updated_at'},
-                {data: 'created_at'},
-                {data: 'last_login'},
-
-                {
-                    data: null,
-                    render: function (data) {
-                        return `
-                            <button onclick="editUser('${data.id}')">Edit</button>
-                            <button onclick="deleteUser('${data.id}')">Delete</button>
-                        `;
-                    }
+                { data: 'id' },
+                { data: 'username' },
+                { data: 'email' },
+                { data: 'phone' },
+                { data: 'role' },
+                { data: 'status' },
+                { data: 'password_updated_at' },
+                { data: 'created_at' },
+                { data: 'last_login' },
+                { // Столбец для кнопки удаления
+                    data: 'id',
+                    render: function (id) {
+                        return `<button onclick="deleteUser('${id}')">Delete</button>`;
+                    },
+                    orderable: false,
+                    searchable: false
                 }
             ]
         });
-
-        // Функция редактирования данных пользователя
-        window.editUser = function (id) {
-            const username = prompt("Enter new username:");
-            const role = prompt("Enter new role (admin/user):");
-            if (!username || !role) {
-                alert("Username and role are required.");
-                return;
-            }
-
-            fetch(`/api/auth/admin/users/${id}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-                },
-                body: JSON.stringify({ username, role })
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Error updating user');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    alert(data.message);
-                    table.ajax.reload(); // Перезагружаем таблицу
-                })
-                .catch(error => {
-                    alert("Error: " + error.message);
-                });
-        };
 
         // Функция удаления данных пользователя
         window.deleteUser = function (id) {
@@ -134,6 +90,69 @@
                     });
             }
         };
+
+        // Включение редактирования ячеек при двойном клике
+        $('#usersTable tbody').on('dblclick', 'td', function () {
+            const cell = table.cell(this); // Получаем ячейку
+            const oldValue = cell.data(); // Старое значение
+
+            // Создаем поле ввода
+            const input = $('<input>', {
+                type: 'text',
+                value: oldValue,
+                class: 'edit-input'
+            });
+
+            // Вставляем поле ввода в ячейку
+            $(this).empty().append(input);
+
+            // Сохраняем изменения при потере фокуса
+            input.on('blur', function () {
+                const newValue = $(this).val();
+                const rowData = table.row($(this).parents('tr')).data();
+                const columnIndex = cell.index().column;
+                const columnName = table.column(columnIndex).dataSrc();
+
+                // Если значение изменилось, отправляем изменения на сервер
+                if (newValue !== oldValue) {
+                    const updatedData = { [columnName]: newValue };
+
+                    fetch(`/api/auth/admin/users/${rowData.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        },
+                        body: JSON.stringify(updatedData)
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Failed to update data');
+                            }
+                            return response.json();
+                        })
+                        .then(() => {
+                            cell.data(newValue).draw(); // Обновляем ячейку
+                        })
+                        .catch(error => {
+                            alert(`Error updating data: ${error.message}`);
+                            cell.data(oldValue).draw(); // Возвращаем старое значение
+                        });
+                } else {
+                    cell.data(oldValue).draw(); // Возвращаем старое значение
+                }
+            });
+
+            // Сохраняем изменения при нажатии Enter
+            input.on('keypress', function (event) {
+                if (event.key === 'Enter') {
+                    $(this).blur();
+                }
+            });
+
+            // Автоматически устанавливаем фокус на поле ввода
+            input.focus();
+        });
     });
 </script>
 </body>
