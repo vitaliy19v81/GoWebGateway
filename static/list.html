@@ -58,13 +58,69 @@
                 { // Столбец для кнопки удаления
                     data: 'id',
                     render: function (id) {
-                        return `<button onclick="deleteUser('${id}')">Delete</button>`;
+                        return `<button onclick="handleProfileAction('${id}')">Check Profile</button>
+                                <button onclick="deleteUser('${id}')">Delete</button>`;
                     },
                     orderable: false,
                     searchable: false
                 }
             ]
         });
+
+        window.handleProfileAction = function (userId) {
+            // Проверка существования профиля
+            fetch(`/v1/profiles/exists/${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error checking profile existence');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.exists) {
+                        // Если профиль существует, переходим на страницу профиля
+                        window.location.href = `/v1/profiles/userid/${userId}`;
+                    } else {
+                        // Если профиля нет, создаем профиль
+                        //createProfile(userId);
+                        window.location.href = `/create-profile?userId=${userId}`;
+                    }
+                })
+                .catch(error => {
+                    alert("Error: " + error.message);
+                });
+        };
+
+        function createProfile(userId) {
+            if (confirm("Profile does not exist. Do you want to create one?")) {
+                fetch('/v1/profiles/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({ user_id: userId })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Error creating profile');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        alert("Profile created successfully!");
+                        table.ajax.reload(); // Перезагружаем таблицу
+                    })
+                    .catch(error => {
+                        alert("Error: " + error.message);
+                    });
+            }
+        }
 
         // Функция удаления данных пользователя
         window.deleteUser = function (id) {

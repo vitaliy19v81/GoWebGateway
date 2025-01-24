@@ -33,6 +33,15 @@ func main() {
 	// Статические файлы
 	r.Static("/static", staticDir)
 
+	r.GET("/create-profile", func(c *gin.Context) {
+		c.File(staticDir + "/profile.html")
+	})
+
+	// Обработка запроса на корень, например для SPA
+	r.GET("/", func(c *gin.Context) {
+		c.File(staticDir + "/index.html")
+	})
+
 	// Прокси для API запросов
 	//// Прокси для профилей
 	//r.Any("/api/profiles/*action", func(c *gin.Context) {
@@ -43,11 +52,6 @@ func main() {
 	//r.Any("/api/auth/*action", func(c *gin.Context) {
 	//	c.Redirect(http.StatusMovedPermanently, "http://127.0.0.1:8081"+c.Request.URL.Path)
 	//})
-
-	// Обработка запроса на корень, например для SPA
-	r.GET("/", func(c *gin.Context) {
-		c.File(staticDir + "/index.html")
-	})
 
 	// Запуск сервера
 	log.Println("Starting web gateway on :8080...")
