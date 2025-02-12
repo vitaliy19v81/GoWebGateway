@@ -33,8 +33,44 @@ func main() {
 	// Статические файлы
 	r.Static("/static", staticDir)
 
+	r.GET("/primer", func(c *gin.Context) {
+		c.File(staticDir + "/primer.html")
+	})
+
+	r.POST("/primer", func(c *gin.Context) {
+		type Response struct {
+			Message string `json:"message"`
+			Success bool   `json:"success"`
+		}
+
+		// Пример логики (замени на свою)
+		success := false // Например, проверка логина
+
+		if success {
+			c.JSON(http.StatusOK, Response{Message: "Login successful!", Success: true})
+		} else {
+			c.JSON(http.StatusUnauthorized, Response{Message: "Login failed!", Success: false})
+		}
+	})
+
+	r.GET("/proba", func(c *gin.Context) {
+		c.File(staticDir + "/proba1.html")
+	})
+
 	r.GET("/create-profile", func(c *gin.Context) {
 		c.File(staticDir + "/profile.html")
+	})
+
+	r.GET("/transfer-form", func(c *gin.Context) {
+		c.File(staticDir + "/transfer_form.html")
+	})
+
+	r.GET("/push_input", func(c *gin.Context) {
+		c.File(staticDir + "/push_input.html")
+	})
+
+	r.GET("/sw.js", func(c *gin.Context) {
+		c.File(staticDir + "/sw.js")
 	})
 
 	// Обработка запроса на корень, например для SPA

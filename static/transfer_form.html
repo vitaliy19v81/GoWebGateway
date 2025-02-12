@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Money Transfer</title>
+</head>
+<body>
+<h1>Money Transfer</h1>
+<form id="transferForm">
+    <label for="fromAccount">From Account:</label>
+    <input type="text" id="fromAccount" name="fromAccount" required>
+    <br><br>
+
+    <label for="toAccount">To Account:</label>
+    <input type="text" id="toAccount" name="toAccount" required>
+    <br><br>
+
+    <label for="amount">Amount:</label>
+    <input type="number" id="amount" name="amount" step="0.01" required>
+    <br><br>
+
+    <button type="button" id="submitTransfer">Submit</button>
+</form>
+
+<div id="message"></div>
+
+<script>
+    const publicKey = "BI2izS49Rqe339JP7w4qS214CbUusG2VCbIhSStOtFBj7Va-GFi0kGfv21_A8cS1OASvib8GdbIlBs1ZJYc9JVw";
+
+    // Регистрация service worker и подписка на push-уведомления
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(async reg => {
+                console.log('Service Worker зарегистрирован');
+                let sub = await reg.pushManager.getSubscription();
+                if (!sub) {
+                    console.log('Создание новой подписки на push-уведомления');
+                    sub = await reg.pushManager.subscribe({
+                        userVisibleOnly: true, // Требует, чтобы уведомления были видимыми пользователю (не фоновые)
+                        applicationServerKey: urlBase64ToUint8Array(publicKey), // Ключ сервера для шифрования push-уведомлений
+                    });
+                }
+                console.log('Отправка подписки на сервер');
+                return fetch('http://localhost:8083/api/push/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(sub),
+                });
+            })
+            .catch(err => console.error('Ошибка регистрации Service Worker:', err));
+    } else {
+        console.warn('Push-уведомления не поддерживаются в этом браузере.');
+    }
+
+    document.getElementById('submitTransfer').addEventListener('click', async () => {
+        const fromAccount = document.getElementById('fromAccount').value.trim();
+        const toAccount = document.getElementById('toAccount').value.trim();
+        const amount = parseFloat(document.getElementById('amount').value);
+
+        // Проверяем корректность введенных данных
+        if (!fromAccount || !toAccount || isNaN(amount) || amount <= 0) {
+            document.getElementById('message').textContent = "Некорректный ввод. Проверьте данные.";
+            console.warn('Ошибка ввода данных пользователем');
+            return;
+        }
+
+        console.log('Отправка запроса на перевод:', { from_account: fromAccount, to_account: toAccount, amount });
+
+        const response = await fetch('http://localhost:8083/api/push/transfer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from_account: fromAccount, to_account: toAccount, amount }),
+        });
+
+        if (response.ok) {
+            console.log('Перевод успешно инициирован, ожидается push-уведомление');
+            document.getElementById('message').textContent = "Код отправлен через push-уведомление.";
+            window.location.href = '/push_input';
+        } else {
+            console.error('Ошибка при попытке перевода', response.status);
+            document.getElementById('message').textContent = "Ошибка при переводе.";
+        }
+    });
+
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        console.log('Преобразование ключа сервера');
+        return new Uint8Array([...atob(base64)].map(c => c.charCodeAt(0)));
+    }
+</script>
+</body>
+</html>

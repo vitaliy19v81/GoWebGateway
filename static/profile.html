@@ -7,6 +7,8 @@
 <body>
 
 <h1>Create Profile</h1>
+<div id="navbar"></div>
+
 <form id="profileForm">
     <label>
         First Name:
@@ -46,6 +48,7 @@
     <button type="submit">Create Profile</button>
 </form>
 
+<script src="/nav_js.js"></script>
 <script>
     document.getElementById('profileForm').addEventListener('submit', async function(event) {
         event.preventDefault();

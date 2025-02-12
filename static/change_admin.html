@@ -47,7 +47,7 @@
     </style>
 </head>
 <body>
-<h1>Change User Role</h1>
+<h1>Изменение роли пользователя</h1>
 <form id="roleForm">
     <label for="username">Username</label>
     <input type="text" id="username" name="username" placeholder="Enter username" required>
@@ -83,7 +83,7 @@
         }
 
         try {
-            const response = await fetch('http://localhost:8080/api/assign-role', {
+            const response = await fetch('http://localhost:8080/api/auth/assign-role', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

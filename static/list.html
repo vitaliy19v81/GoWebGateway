@@ -14,6 +14,8 @@
 <body>
 <h1>Admin - Manage Users</h1>
 
+<div id="navbar"></div>
+
 <!-- Таблица для отображения данных пользователей -->
 <table id="usersTable" class="display">
     <thead>
@@ -33,6 +35,15 @@
     <tbody></tbody>
 </table>
 
+
+<!--<script>-->
+<!--    fetch('nav.html')-->
+<!--        .then(response => response.text())-->
+<!--        .then(data => {-->
+<!--            document.getElementById('navbar').innerHTML = data;-->
+<!--        });-->
+<!--</script>-->
+<script src="/nav_js.js"></script>
 <script>
     $(document).ready(function () {
         // Инициализация DataTable

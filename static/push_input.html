@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Push Input</title>
+</head>
+<body>
+<h1>Push Notification Input</h1>
+
+<form id="pushForm">
+    <label for="message">Message:</label><br>
+    <input type="text" id="message" name="message" required><br><br>
+    <input type="submit" value="Submit">
+</form>
+
+<script>
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log("Service Worker зарегистрирован:", reg))
+            .catch(err => console.error("Ошибка регистрации Service Worker:", err));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const messageInput = document.getElementById('message');
+
+        if (messageInput) {
+            navigator.serviceWorker.addEventListener('message', function(event) {
+                console.log('Получено сообщение от Service Worker:', event.data);
+                // messageInput.value = event.data; // Автозаполняем input
+                // Фильтруем только число из полученного сообщения
+                const match = event.data.match(/\d+/); // Ищем число
+                const code = match ? match[0] : ''; // Берем только найденное число
+
+                messageInput.value = code; // Заполняем input только числом
+            });
+        } else {
+            console.error("Элемент #message не найден.");
+        }
+    });
+
+    document.getElementById('pushForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        const code = document.getElementById('message').value;
+        console.log("Отправляем сообщение:", code);
+
+        fetch('http://localhost:8083/api/push/confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code }),
+        }).then(response => {
+            if (response.ok) {
+                alert("Сообщение успешно отправлено!");
+            } else {
+                alert("Ошибка при отправке сообщения.");
+            }
+        }).catch(error => {
+            console.error("Ошибка запроса:", error);
+        });
+    });
+</script>
+</body>
+</html>

@@ -9,7 +9,7 @@
 <body>
 <form id="changeRoleForm">
     <h2>Change User Role</h2>
-    <input type="text" id="username" placeholder="Username" required>
+    <input type="text" id="identifier" placeholder="Username" required>
     <select id="role">
         <option value="user">User</option>
         <option value="editor">Editor</option>
@@ -26,17 +26,17 @@
         e.preventDefault();
         if (!(await fetchWithAuth())) return;
 
-        const username = document.getElementById('username').value;
+        const identifier = document.getElementById('identifier').value;
         const role = document.getElementById('role').value;
 
         try {
             const response = await fetch('/api/auth/assign-role', {
-                method: 'POST',
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
                 },
-                body: JSON.stringify({ username, role }),
+                body: JSON.stringify({ identifier, role }),
             });
 
             const messageDiv = document.getElementById('roleMessage');
